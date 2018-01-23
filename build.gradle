@@ -1,7 +1,72 @@
+import groovy.json.JsonSlurper
 
 apply plugin: 'java'
 
-wrapper {
-    gradleVersion = '4.3.1'
+build {
+    dependsOn jar
 }
 
+def json = file("latest.json")
+
+def downloadZip(url) {
+    println("Downloading zip $url")
+    if (url.contains("linux")) {
+        "wget -O linux/dist.zip $url".execute().waitFor()
+    }
+    else if (url.contains("win")) {
+        "wget -O win/dist.zip $url".execute().waitFor()
+    }
+    else if (url.contains("osx")) {
+        "wget -O osx/dist.zip $url".execute().waitFor()
+    }
+    else {
+        println("Failed to identify os")
+    }
+}
+
+task parseLatest { 
+    if (json.exists()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(json.text)
+
+        assert object instanceof Map
+
+        file("linux").mkdir()
+        file("win").mkdir()
+        file("osx").mkdir()
+        
+        def assets = object["assets"]
+        assets.each {
+            downloadZip(it["browser_download_url"])
+        }
+    }
+}
+
+task unzipWin(type: Copy) {
+    from zipTree("win/dist.zip")
+    into "win"
+    dependsOn parseLatest
+}
+
+task unzipLinux(type: Copy) {
+    from zipTree("linux/dist.zip")
+    into "linux"
+    dependsOn parseLatest
+}
+
+task unzipOsx(type: Copy) {
+    from zipTree("osx/dist.zip")
+    into "osx"
+    dependsOn parseLatest
+}
+
+task setup {
+    dependsOn parseLatest
+    dependsOn unzipWin
+    dependsOn unzipLinux
+    dependsOn unzipOsx
+
+    unzipWin.mustRunAfter parseLatest
+    unzipLinux.mustRunAfter parseLatest
+    unzipOsx.mustRunAfter parseLatest
+}
