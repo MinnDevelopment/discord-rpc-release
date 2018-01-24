@@ -11,8 +11,8 @@ curl -H "Accept: $accept" \
 ./gradlew clean setup
 resources="src/main/resources"
 echo moving binaries...
-mv "win/discord-rpc/win64-dynamic/lib/discord-rpc.lib" "$resources/win32-x86-64/discord-rpc.dll"
-mv "win/discord-rpc/win32-dynamic/lib/discord-rpc.lib" "$resources/win32-x86/discord-rpc.dll"
+mv "win/discord-rpc/win64-dynamic/bin/discord-rpc.dll" "$resources/win32-x86-64/discord-rpc.dll"
+mv "win/discord-rpc/win32-dynamic/bin/discord-rpc.dll" "$resources/win32-x86/discord-rpc.dll"
 mv "linux/discord-rpc/linux-dynamic/lib/libdiscord-rpc.so" "$resources/linux-x86-64/libdiscord-rpc.so"
 mv "osx/discord-rpc/osx-dynamic/lib/libdiscord-rpc.dylib" "$resources/darwin/libdiscord-rpc.dylib"
 
