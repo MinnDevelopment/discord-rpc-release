@@ -6,7 +6,8 @@ build {
     dependsOn jar
 }
 
-def json = file("latest.json")
+ext.targets = ["linux", "win", "osx"]
+ext.json = file("latest.json")
 
 def downloadZip(url) {
     println("Downloading zip $url")
@@ -24,49 +25,54 @@ def downloadZip(url) {
     }
 }
 
-task parseLatest { 
-    if (json.exists()) {
-        def jsonSlurper = new JsonSlurper()
-        def object = jsonSlurper.parseText(json.text)
+def parse() { 
+    def jsonSlurper = new JsonSlurper()
+    def object = jsonSlurper.parseText(json.text)
 
-        assert object instanceof Map
+    assert object instanceof Map
+    
+    targets.each {
+        file(it).mkdir()
+    }
+    
+    def assets = object["assets"]
+    assets.each {
+        downloadZip(it["browser_download_url"])
+    }
 
-        file("linux").mkdir()
-        file("win").mkdir()
-        file("osx").mkdir()
-        
-        def assets = object["assets"]
-        assets.each {
-            downloadZip(it["browser_download_url"])
+    file("tag_name.txt").text = object["tag_name"]
+}
+
+ext.unzipTasks = []
+
+def setupTasks() {
+    task parseLatest { 
+        doFirst { 
+            parse()
         }
+    }
+
+    targets.each {
+        Copy copy = tasks.create(name: "unzip_$it", type: Copy) 
+
+        copy.from zipTree("$it/dist.zip")
+        copy.into it
+    }
+
+    task(unzipArchives)
+    unzipArchives.dependsOn parseLatest
+    targets.each {
+        Copy copy = tasks["unzip_$it"]
+        unzipArchives.dependsOn copy
+        copy.mustRunAfter parseLatest
     }
 }
 
-task unzipWin(type: Copy) {
-    from zipTree("win/dist.zip")
-    into "win"
-    dependsOn parseLatest
-}
-
-task unzipLinux(type: Copy) {
-    from zipTree("linux/dist.zip")
-    into "linux"
-    dependsOn parseLatest
-}
-
-task unzipOsx(type: Copy) {
-    from zipTree("osx/dist.zip")
-    into "osx"
-    dependsOn parseLatest
-}
-
 task setup {
-    dependsOn parseLatest
-    dependsOn unzipWin
-    dependsOn unzipLinux
-    dependsOn unzipOsx
-
-    unzipWin.mustRunAfter parseLatest
-    unzipLinux.mustRunAfter parseLatest
-    unzipOsx.mustRunAfter parseLatest
+    mustRunAfter clean
+    if (json.exists()) {  
+        setupTasks()
+        dependsOn parseLatest
+        dependsOn unzipArchives
+    }
 }
