@@ -46,10 +46,8 @@ def parse() {
 ext.unzipTasks = []
 
 def setupTasks() {
-    task parseLatest { 
-        doFirst { 
-            parse()
-        }
+    task parseLatest << { 
+        parse()
     }
 
     targets.each {
