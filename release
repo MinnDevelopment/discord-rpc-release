@@ -18,6 +18,12 @@ mv "osx/discord-rpc/osx-dynamic/lib/libdiscord-rpc.dylib" "$resources/darwin/lib
 
 version=$(<tag_name.txt)
 rm latest.json tag_name.txt
+if [ "$version" == "$(git tag | tail -1)" ];
+then
+    echo "Already on latest version!"
+    rm -rf linux win osx
+    exit 1
+fi
 echo starting compilation...
 ./gradlew build
 
