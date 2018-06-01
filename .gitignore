@@ -3,3 +3,4 @@ out/
 .gradle/
 message.txt
 latest.json
+gradle.properties

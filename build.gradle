@@ -1,13 +1,21 @@
-import groovy.json.JsonSlurper
-
-apply plugin: 'java'
-
-build {
-    dependsOn jar
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'com.jfrog.bintray' version '1.7.3'
 }
+import groovy.json.JsonSlurper
 
 ext.targets = ["linux", "win", "osx"]
 ext.json = file("latest.json")
+
+group = 'club.minnced'
+version = getGitVersion()
+
+static def getGitVersion() {
+    def out = "git tag -l".execute().text
+    def lines = out.split("\n")
+    return lines[lines.length - 1]
+}
 
 def downloadZip(url) {
     println("Downloading zip $url")
@@ -73,4 +81,72 @@ task setup {
         dependsOn parseLatest
         dependsOn unzipArchives
     }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from "src/main/java"
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+bintray {
+    user = bintrayUsername
+    key = bintrayApiKey
+    publications = ["BintrayRelease"]
+    pkg {
+        repo = 'maven'
+        name = project.name
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/MinnDevelopment/discord-rpc-release.git'
+        githubRepo = 'MinnDevelopment/discord-rpc-release'
+        publish = true
+        version {
+            name = project.version
+            vcsTag = project.version
+            released = new Date()
+            gpg {
+                sign = true
+            }
+        }
+    }
+}
+
+bintrayUpload {
+    dependsOn clean
+    dependsOn build
+    build.mustRunAfter clean
+
+    onlyIf { !getProjectProperty('bintrayUsername').empty }
+    onlyIf { !getProjectProperty('bintrayApiKey').empty }
+}
+
+def getProjectProperty(String key) {
+    return hasProperty(key) ? this.properties[key] : ''
+}
+
+publishing {
+    publications {
+        BintrayRelease(MavenPublication) {
+            from components.java
+            groupId group
+            artifactId archivesBaseName
+            version version
+
+            artifact javadocJar
+            artifact sourcesJar
+        }
+    }
+}
+
+build {
+    dependsOn jar
+    dependsOn javadocJar
+    dependsOn sourcesJar
+
+    jar.mustRunAfter sourcesJar
+    javadocJar.mustRunAfter sourcesJar
 }

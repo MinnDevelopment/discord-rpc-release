@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 accept="application/vnd.github.v3+json"
 base_url="https://api.github.com"
 
@@ -42,4 +43,9 @@ read -n1 -p "Press any key to continue..."
 
 git commit -m "Updated to release $version"
 git tag -a $version -m $version
+
+echo "Uploading to bintray..."
+./gradlew bintrayUpload
+
+echo "Uploading to github..."
 git push --tags origin master
