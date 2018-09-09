@@ -4,3 +4,4 @@ out/
 message.txt
 latest.json
 gradle.properties
+.idea/

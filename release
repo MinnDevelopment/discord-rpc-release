@@ -6,8 +6,16 @@ base_url="https://api.github.com"
 owner="discordapp"
 repo="discord-rpc"
 
-curl -H "Accept: $accept" \
-    "$base_url/repos/$owner/$repo/releases/latest" > latest.json
+curl -o latest.json -H "Accept: $accept" \
+    "$base_url/repos/$owner/$repo/releases/latest" 2> /dev/null
+
+version=$(cat latest.json | jq '.tag_name' | tr -d \")
+if [ "$version" == "$(git tag | tail -1)" ];
+then
+    echo "Already on latest version! $version"
+    rm latest.json
+    exit 1
+fi
 
 ./gradlew clean setup
 resources="src/main/resources"
@@ -17,14 +25,6 @@ mv "win/discord-rpc/win32-dynamic/bin/discord-rpc.dll" "$resources/win32-x86/dis
 mv "linux/discord-rpc/linux-dynamic/lib/libdiscord-rpc.so" "$resources/linux-x86-64/libdiscord-rpc.so"
 mv "osx/discord-rpc/osx-dynamic/lib/libdiscord-rpc.dylib" "$resources/darwin/libdiscord-rpc.dylib"
 
-version=$(<tag_name.txt)
-rm latest.json tag_name.txt
-if [ "$version" == "$(git tag | tail -1)" ];
-then
-    echo "Already on latest version!"
-    rm -rf linux win osx
-    exit 1
-fi
 echo starting compilation...
 ./gradlew build
 

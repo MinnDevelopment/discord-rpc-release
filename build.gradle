@@ -33,33 +33,31 @@ def downloadZip(url) {
     }
 }
 
-def parse() { 
+def parse() {
     def jsonSlurper = new JsonSlurper()
     def object = jsonSlurper.parseText(json.text)
 
     assert object instanceof Map
-    
+
     targets.each {
         file(it).mkdir()
     }
-    
+
     def assets = object["assets"]
     assets.each {
         downloadZip(it["browser_download_url"])
     }
-
-    file("tag_name.txt").text = object["tag_name"]
 }
 
 ext.unzipTasks = []
 
 def setupTasks() {
-    task parseLatest << { 
+    task parseLatest << {
         parse()
     }
 
     targets.each {
-        Copy copy = tasks.create(name: "unzip_$it", type: Copy) 
+        Copy copy = tasks.create(name: "unzip_$it", type: Copy)
 
         copy.from zipTree("$it/dist.zip")
         copy.into it
@@ -76,7 +74,7 @@ def setupTasks() {
 
 task setup {
     mustRunAfter clean
-    if (json.exists()) {  
+    if (json.exists()) {
         setupTasks()
         dependsOn parseLatest
         dependsOn unzipArchives
