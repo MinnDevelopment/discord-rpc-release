@@ -5,3 +5,6 @@ message.txt
 latest.json
 gradle.properties
 .idea/
+win/
+linux/
+osx/

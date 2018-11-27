@@ -10,6 +10,7 @@ curl -o latest.json -H "Accept: $accept" \
     "$base_url/repos/$owner/$repo/releases/latest" 2> /dev/null
 
 version=$(cat latest.json | jq '.tag_name' | tr -d \")
+echo "New version: $version"
 if [ "$version" == "$(git tag | tail -1)" ];
 then
     echo "Already on latest version! $version"
@@ -28,9 +29,9 @@ mv "osx/discord-rpc/osx-dynamic/lib/libdiscord-rpc.dylib" "$resources/darwin/lib
 echo starting compilation...
 ./gradlew build
 
-rm -rf linux win osx
+#rm -rf linux win osx latest.json
 
-git add *
+git add -A
 git status
 
 echo
