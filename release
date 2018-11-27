@@ -29,7 +29,7 @@ mv "osx/discord-rpc/osx-dynamic/lib/libdiscord-rpc.dylib" "$resources/darwin/lib
 echo starting compilation...
 ./gradlew build
 
-#rm -rf linux win osx latest.json
+rm -rf linux win osx latest.json
 
 git add -A
 git status
